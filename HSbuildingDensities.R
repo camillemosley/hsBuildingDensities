@@ -2,6 +2,12 @@
 ##### Fishscapes project
 rm(list=ls())
 
+#******** DATA REQUIREMENT *********#
+# to run this script and data analyses you must download hsBuildingDensities_data.zip
+# from Fishscapes/Data/GIS on the Fishscapes Google Drive
+# YOU SHOULD PUT THE ZIP FILE IN YOUR LOCAL VERSION OF THIS GITHUB REPOSITORY AND UNZIP IT THERE
+# these files will not be version controlled because they are included in .gitignore
+
 # load spatial packages
 library(rgdal)
 library(rgeos)
@@ -9,7 +15,7 @@ library(raster)
 library(geosphere)
 library(sf)
 
-# script assumes it is being run from repository
+# script assumes it is being run from repository and unzipped hsBuildingDensities_data.zip is in the repository as well
 repoDir=getwd()
 
 ####################
@@ -27,15 +33,12 @@ wbic=as.data.frame(WDNRwbic,stringsAsFactors=FALSE)
 WDNRwbic_NAD83=spTransform(WDNRwbic,CRS("+init=epsg:4269"))
 
 # get list of wbics for each county
-setwd("~/Documents/Research/Fishscapes/hyperstability/hsSurvey/")
 HSwbics=read.csv("HSwbic.csv",stringsAsFactors=FALSE)
 # remove spaces from county names
 HSwbics$county=gsub(" ","",HSwbics$county)
 
 # get list of county geospatial files
-setwd("~/Documents/Research/People/Students/current/Mosley_Camille/codeHelp/hyperstabilitySurveyBuildingDensities/HsSurvey_WI_buildings/")
-countyFiles=list.files()
-countyFiles=countyFiles[!grepl("x$",countyFiles)]
+countyFiles=list.files(paste(repoDir,"/hsBuildingDensities_data/HsSurvey_WI_buildings",sep=""))
 
 # removing counties without spatial data from HSwbics
 HSwbics=HSwbics[HSwbics$county%in%toupper(gsub("_.*","",countyFiles)),]
@@ -47,24 +50,22 @@ colnames(HSbuildingsSummary)=c('wbic','county','lakePerimeter_m','lakeArea_m2','
 # loop through each county
 counter=1
 for(i in 1:length(countyFiles)){
-  setwd("~/Documents/Research/People/Students/current/Mosley_Camille/codeHelp/hyperstabilitySurveyBuildingDensities/HsSurvey_WI_buildings/") 
+  setwd(repoDir) 
   # if data is in a geodatabase
   if(grepl("gdb",countyFiles[i])){
-    gdb=countyFiles[i]
+    gdb=paste(repoDir,"/hsBuildingDensities_data/HsSurvey_WI_buildings/",countyFiles[i],sep="")
     curCounty=readOGR(gdb,layer=gsub(".gdb","",countyFiles[i],fixed=TRUE))
-    curCountyDF=as.data.frame(curCounty)
     
-    # works for polygon or point data convert to building centroids
-      centBuild=gCentroid(curCounty,byid=TRUE)
-      # project building centroids in NAD83 (epsg:4269)
-      centBuild_NAD83=spTransform(centBuild,CRS("+init=epsg:4269"))
+    # convert to building centroids (even if point data...)
+    centBuild=gCentroid(curCounty,byid=TRUE)
+    # project building centroids in NAD83 (epsg:4269)
+    centBuild_NAD83=spTransform(centBuild,CRS("+init=epsg:4269"))
  
   # other counties use a shapefile  
   }else{
-    setwd(countyFiles[i])
-    curCounty=st_read(paste(countyFiles[i],".shp",sep=""))
+    curCounty=st_read(paste(repoDir,"/hsBuildingDensities_data/HsSurvey_WI_buildings/",countyFiles[i],"/",countyFiles[i],".shp",sep=""))
     
-    # works for multipolygon shapefile...
+    # convert to centroids (even for point shapefile) and then to spatial points object
     centBuild=as_Spatial(st_centroid(curCounty)$geometry)
     centBuild_NAD83=spTransform(centBuild,CRS("+init=epsg:4269"))
   }
