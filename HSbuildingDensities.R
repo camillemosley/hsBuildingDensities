@@ -1,6 +1,5 @@
 ##### Script for generating shoreline building density for lakes in hyperstability survey DNR dataset
-##### SEJ
-##### 4-13-2020
+##### Fishscapes project
 rm(list=ls())
 
 # load spatial packages
@@ -10,11 +9,13 @@ library(raster)
 library(geosphere)
 library(sf)
 
+# script assumes it is being run from repository
+repoDir=getwd()
+
 ####################
 # Load WDNR HYDRO 24K
 ####################
-setwd("~/Documents/Research/People/Students/current/Mosley_Camille/codeHelp/hyperstabilitySurveyBuildingDensities/WDNR_HYDRO_24K/")
-gdb='WDNR_HYDRO_24K.gdb'
+gdb=paste(repoDir,"/hsBuildingDensities_data/WDNR_HYDRO_24K/WDNR_HYDRO_24K.gdb",sep="")
 ogrListLayers(gdb)
 
 # load a layer from a geodatabase
